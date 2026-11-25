@@ -49,6 +49,16 @@ describe("QuakeTable", () => {
   });
 });
 
+describe("Controls accessibility", () => {
+  it("gives the magnitude slider an accessible name (a wrapping label would bind to the <output> instead)", async () => {
+    const { Controls } = await import("@/components/Controls");
+    render(<Controls filters={{ window: "week", minMag: 2.5, query: "" }} onChange={() => {}} />);
+    expect(screen.getByRole("slider", { name: /Minimum magnitude/ })).toHaveValue("2.5");
+    expect(screen.getByRole("combobox", { name: "Time window" })).toBeInTheDocument();
+    expect(screen.getByRole("searchbox", { name: /Place contains/ })).toBeInTheDocument();
+  });
+});
+
 describe("App", () => {
   it("loads the feed, shows the summary and reads filters from the URL", async () => {
     window.history.replaceState(null, "", "/?mag=0&q=zzzz-nothing");

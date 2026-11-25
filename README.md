@@ -26,7 +26,7 @@ Needs Node 22.
 
 ## Tests
 
-`npm test` runs 22 unit and component tests (Vitest and Testing Library). `npm run test:e2e` runs 5 Playwright tests in a real browser against a built copy of the app, with the USGS request answered from a recorded sample so the tests are deterministic and offline.
+`npm test` runs 23 unit and component tests (Vitest and Testing Library). `npm run test:e2e` runs 5 Playwright tests in a real browser (installed Chrome, one browser only) against a built copy of the app, with the USGS request answered from a recorded sample so the tests are deterministic and offline.
 
 ### Deliberate breaks
 
@@ -41,6 +41,8 @@ I broke the code on purpose in six places and checked that a specific test faile
 | Negative magnitude dropped from the histogram | histogram "loses no events" test |
 | Page number not clamped when data shrinks | table paging test |
 
+The browser test also caught an accessibility bug that unit tests had missed: the magnitude slider had no accessible name, because a wrapping `<label>` binds to the first labelable element inside it, which was the `<output>`, not the slider. It is fixed with an explicit `htmlFor`, and a unit test now fails on the old markup.
+
 The first version of the stale-response test passed even with that break, because its fake `fetch` politely honoured the abort signal. Rewriting the test so the fake ignores the signal made it fail on my own code and exposed the "stuck on Loading" bug, which is now fixed.
 
 ## Limits
@@ -50,7 +52,7 @@ The first version of the stale-response test passed even with that break, becaus
 - The map plots at most the 1,500 strongest events in the current view, to keep the SVG light.
 - Colour encodes depth (colour-blind-safe palette), but depth is also in the table, so colour is never the only channel for the data.
 - No real-time updates; the feed is fetched when the window changes or on retry.
-- Not audited with a screen reader; only keyboard and automated checks were done.
+- Not audited with a screen reader; only keyboard and automated checks were done. Browser tests ran in Chrome only.
 
 ## Data and licence
 

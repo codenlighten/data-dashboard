@@ -20,9 +20,13 @@ export function Controls({ filters, onChange }: { filters: Filters; onChange: (p
           ))}
         </select>
       </label>
-      <label>
-        Minimum magnitude: <output>{filters.minMag.toFixed(1)}</output>
+      <div className="field">
+        {/* Explicit htmlFor: a wrapping label would bind to the <output> (also labelable), leaving the slider unnamed. */}
+        <label htmlFor="min-mag">
+          Minimum magnitude: <output htmlFor="min-mag">{filters.minMag.toFixed(1)}</output>
+        </label>
         <input
+          id="min-mag"
           type="range"
           min={0}
           max={7}
@@ -30,7 +34,7 @@ export function Controls({ filters, onChange }: { filters: Filters; onChange: (p
           value={filters.minMag}
           onChange={(e) => onChange({ minMag: Number(e.target.value) })}
         />
-      </label>
+      </div>
       <label>
         Place contains
         <input
