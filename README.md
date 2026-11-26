@@ -26,20 +26,20 @@ Needs Node 22. On a bare Linux machine the browser may also need system librarie
 
 ## What this proves
 
-- **Untrusted data is validated.** `src/data/parse.ts` checks every feature of the feed and drops and counts malformed ones, so one bad record cannot crash the page. Links are accepted only if they are `https:`. The UI tells the user how many features were skipped.
+- **Untrusted data is validated.** `src/data/parse.ts` checks every feature of the feed and drops and counts malformed ones, including values that are numbers but impossible (a date no calendar holds, a magnitude of a billion), so one bad record cannot crash the page. Links are accepted only if they are `https:`. The UI tells the user how many features were skipped.
 - **Pure, tested data layer.** Parsing, filtering, statistics (histogram, per-day counts with UTC zero-filling, medians) and URL state are plain functions in `src/data/`, tested against a trimmed copy of a real feed.
 - **No stale-response bugs.** Switching the time window while a slow request is in flight cannot let the old answer replace the new one (`src/hooks/useQuakes.ts`). A test found a real bug here in my first version, where a late response left the page stuck on "Loading".
-- **Shareable state.** Filters are read from and written to the URL, with hostile or invalid values falling back to defaults.
+- **Shareable state.** Filters are read from and written to the URL, with hostile or invalid values (including magnitudes the slider cannot show) falling back to defaults.
 - **Accessible by construction.** Charts and the map are SVG with text labels (`role="img"`), and the same events are in a real `<table>` with sortable column buttons and `aria-sort`. Controls are labelled, focus is visible, the layout follows the system light or dark setting and reduced-motion preference, and the e2e suite checks a 360 px screen for horizontal scroll.
-- **Light.** D3 is used only for scales, bins, shapes and map projection (`d3-array`, `d3-scale`, `d3-geo`); React renders the SVG. Production build: 389 kB JavaScript, 132 kB gzipped, including the world outline (Vite 8, one build, n=1).
+- **Light.** D3 is used only for scales, bins, shapes and map projection (`d3-array`, `d3-scale`, `d3-geo`); React renders the SVG. Production build: 390 kB JavaScript, 132 kB gzipped, including the world outline (Vite 8, one build, n=1).
 
 ## Tests
 
-`npm test` runs 23 unit and component tests (Vitest and Testing Library). `npm run test:e2e` runs 5 Playwright tests in a real browser (installed Chrome, one browser only) against a built copy of the app, with the USGS request answered from a recorded sample so the tests are deterministic and offline.
+`npm test` runs 29 unit and component tests (Vitest and Testing Library). `npm run test:e2e` runs 5 Playwright tests in a real browser (installed Chrome, one browser only) against a built copy of the app, with the USGS request answered from a recorded sample so the tests are deterministic and offline.
 
 ### Deliberate breaks
 
-I broke the code on purpose in six places and checked that a specific test failed each time, then restored it:
+In the first version I broke the code on purpose in six places and checked that a specific test failed each time, then restored it:
 
 | Break | Test that caught it |
 |---|---|
@@ -53,6 +53,20 @@ I broke the code on purpose in six places and checked that a specific test faile
 The browser test also caught an accessibility bug that unit tests had missed: the magnitude slider had no accessible name, because a wrapping `<label>` binds to the first labelable element inside it, which was the `<output>`, not the slider. It is fixed with an explicit `htmlFor`, and a unit test now fails on the old markup.
 
 The first version of the stale-response test passed even with that break, because its fake `fetch` politely honoured the abort signal. Rewriting the test so the fake ignores the signal made it fail on my own code and exposed the "stuck on Loading" bug, which is now fixed.
+
+## What a code review found
+
+An independent AI review of the source (2026-11-26) found five faults the first 23 tests did not. Each got a test that failed on the old code, then a fix:
+
+| Fault | Fix |
+|---|---|
+| A record with a huge but finite timestamp threw while rendering and blanked the page | Dates outside 1900 to 2100 are dropped and counted |
+| A magnitude of a billion made the chart allocate until memory ran out (the new test reproduced that) | Magnitudes outside -5 to 10 are dropped and counted |
+| A shared link could ask for a magnitude the slider cannot show | Only slider values are accepted |
+| The magnitude chart counted events it did not draw, and drew negative magnitudes as 0 | A "<0" bucket, and a note saying how many have no magnitude |
+| The table returned to an old page when filtering was undone | New data starts at page 1 |
+
+Eleven deliberate breaks of the new code were each caught.
 
 ## Limits
 

@@ -10,6 +10,13 @@ export function QuakeTable({ quakes }: { quakes: readonly Quake[] }) {
   const [key, setKey] = useState<SortKey>("time");
   const [dir, setDir] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(0);
+  // New data (another filter or feed) starts at the first page; a remembered page would otherwise
+  // reappear as soon as the list grew long enough again.
+  const [shown, setShown] = useState(quakes);
+  if (shown !== quakes) {
+    setShown(quakes);
+    setPage(0);
+  }
 
   const sorted = useMemo(() => {
     const sign = dir === "asc" ? 1 : -1;

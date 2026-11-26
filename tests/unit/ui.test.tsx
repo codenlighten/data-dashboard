@@ -43,6 +43,16 @@ describe("QuakeTable", () => {
     expect(screen.getAllByRole("row")).toHaveLength(6);
   });
 
+  it("does not jump back to an old page when the data widens again", async () => {
+    const many = Array.from({ length: 60 }, (_, i) => q({ id: `e${i}`, place: `Place ${i}`, time: 1e12 + i }));
+    const { rerender } = render(<QuakeTable quakes={many} />);
+    await userEvent.click(screen.getByRole("button", { name: "Next" }));
+    await userEvent.click(screen.getByRole("button", { name: "Next" }));
+    rerender(<QuakeTable quakes={many.slice(0, 5)} />);
+    rerender(<QuakeTable quakes={many} />);
+    expect(screen.getByText("Page 1 of 3")).toBeInTheDocument();
+  });
+
   it("shows an actionable empty state", () => {
     render(<QuakeTable quakes={[]} />);
     expect(screen.getByRole("status")).toHaveTextContent(/Lower the minimum magnitude/);
@@ -86,6 +96,31 @@ describe("App", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(ok(dirty)));
     render(<App />);
     await waitFor(() => expect(screen.getByText(/1 malformed feature in the feed was skipped/)).toBeInTheDocument());
+  });
+
+  it("survives records with impossible values and says they were skipped", async () => {
+    const good = fixture.features[0];
+    const bad = [
+      { ...good, id: "bad-time", properties: { ...good.properties, time: 1e20 } },
+      { ...good, id: "bad-mag", properties: { ...good.properties, mag: 1e9 } },
+    ];
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(ok({ ...fixture, features: [...fixture.features, ...bad] })));
+    render(<App />);
+    expect(await screen.findByText(/2 malformed features in the feed were skipped/)).toBeInTheDocument();
+    expect(screen.getByText("Strongest")).toBeInTheDocument();
+  });
+
+  it("says how many events the magnitude chart leaves out for want of a magnitude", async () => {
+    const good = fixture.features[0];
+    const features = [
+      { ...good, id: "rated", properties: { ...good.properties, mag: 3 } },
+      { ...good, id: "unrated", properties: { ...good.properties, mag: null } },
+    ];
+    window.history.replaceState(null, "", "/?mag=0");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(ok({ ...fixture, features })));
+    render(<App />);
+    expect(await screen.findByText("1 event without a magnitude is not in this chart.")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: /^Events by magnitude\. 1 rated event / })).toBeInTheDocument();
   });
 
   it("ignores a slow stale response when the window changed meanwhile", async () => {

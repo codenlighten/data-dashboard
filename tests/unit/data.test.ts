@@ -35,6 +35,25 @@ describe("parseFeed", () => {
     expect(r.skipped).toBe(5);
   });
 
+  it("drops events whose time or magnitude no earthquake could have", () => {
+    const good = fixture.features[0];
+    const withProps = (id: string, over: Record<string, unknown>) => ({ ...good, id, properties: { ...good.properties, ...over } });
+    const r = parseFeed({
+      type: "FeatureCollection",
+      features: [
+        withProps("t-high", { time: 1e20 }),
+        withProps("t-low", { time: -1e20 }),
+        withProps("m-high", { mag: 1e9 }),
+        withProps("m-low", { mag: -100 }),
+        withProps("ok-small", { mag: -1.2 }),
+        withProps("ok-great", { mag: 9.5 }),
+        withProps("ok-unrated", { mag: null }),
+      ],
+    });
+    expect(r.quakes.map((e) => e.id)).toEqual(["ok-small", "ok-great", "ok-unrated"]);
+    expect(r.skipped).toBe(4);
+  });
+
   it("rejects documents that are not a feed, and non-https links", () => {
     expect(() => parseFeed({ hello: "world" })).toThrow(/FeatureCollection/);
     expect(() => parseFeed(null)).toThrow();
@@ -67,11 +86,17 @@ describe("stats", () => {
     expect(s.medianMag).toBe(4);
     expect(s.medianDepth).toBe(10);
   });
+  it("histogram gives negative magnitudes their own bucket, only when there are any", () => {
+    const h = magnitudeHistogram([q({ mag: -0.5 }), q({ mag: 0 }), q({ mag: null })]);
+    expect(h[0]).toEqual({ from: -Infinity, to: 0, count: 1 });
+    expect(h[1]).toEqual({ from: 0, to: 1, count: 1 });
+    expect(magnitudeHistogram([q({ mag: 0 })])[0]?.from).toBe(0);
+  });
   it("histogram puts a boundary value in the higher bucket and loses no events", () => {
     const h = magnitudeHistogram([q({ mag: 1 }), q({ mag: 1.99 }), q({ mag: 2 }), q({ mag: -0.5 })]);
     expect(h.find((b) => b.from === 1)?.count).toBe(2);
     expect(h.find((b) => b.from === 2)?.count).toBe(1);
-    expect(h.find((b) => b.from === 0)?.count).toBe(1);
+    expect(h.find((b) => b.from === -Infinity)?.count).toBe(1);
     expect(h.reduce((n, b) => n + b.count, 0)).toBe(4);
   });
   it("histogram axis stays at least 0-8 and grows for a huge event", () => {
@@ -113,6 +138,12 @@ describe("URL state", () => {
     });
     expect(filtersFromSearch("?mag=-3").minMag).toBe(DEFAULT_FILTERS.minMag);
     expect(filtersFromSearch("?mag=0").minMag).toBe(0);
+  });
+  it("accepts only magnitudes the slider can show", () => {
+    for (const bad of ["8", "9", "7.5", "2.7", "0.25", "", "1e1"]) {
+      expect(filtersFromSearch(`?mag=${bad}`).minMag, bad).toBe(DEFAULT_FILTERS.minMag);
+    }
+    for (const good of [0, 0.5, 6.5, 7]) expect(filtersFromSearch(`?mag=${good}`).minMag).toBe(good);
   });
 });
 

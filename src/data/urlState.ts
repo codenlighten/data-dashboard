@@ -1,15 +1,18 @@
-import { DEFAULT_FILTERS, type Filters, type WindowId } from "./types";
+import { DEFAULT_FILTERS, MIN_MAG_SLIDER, type Filters, type WindowId } from "./types";
 
 const WINDOWS: readonly WindowId[] = ["hour", "day", "week", "month"];
+
+const onSlider = (m: number) => m >= MIN_MAG_SLIDER.min && m <= MIN_MAG_SLIDER.max && Number.isInteger(m / MIN_MAG_SLIDER.step);
 
 /** Reads filters from a query string. Anything missing or invalid falls back to the default. */
 export function filtersFromSearch(search: string): Filters {
   const p = new URLSearchParams(search);
   const w = p.get("window");
-  const m = Number(p.get("mag"));
+  const raw = p.get("mag") ?? "";
+  const m = /^\d(\.\d+)?$/.test(raw) ? Number(raw) : NaN;
   return {
     window: WINDOWS.includes(w as WindowId) ? (w as WindowId) : DEFAULT_FILTERS.window,
-    minMag: p.has("mag") && Number.isFinite(m) && m >= 0 && m <= 9 ? m : DEFAULT_FILTERS.minMag,
+    minMag: onSlider(m) ? m : DEFAULT_FILTERS.minMag,
     query: (p.get("q") ?? "").slice(0, 80),
   };
 }

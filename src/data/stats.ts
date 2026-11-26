@@ -25,12 +25,19 @@ export interface Bucket {
   count: number;
 }
 
-/** Fixed 1-magnitude-unit buckets from 0, so the axis does not jump between filter changes. */
+/**
+ * Fixed 1-magnitude-unit buckets from 0, so the axis does not jump between filter changes. Small events
+ * can have negative magnitudes; when there are any, they get a bucket of their own below 0. Events
+ * without a magnitude are in no bucket.
+ */
 export function magnitudeHistogram(quakes: readonly Quake[]): Bucket[] {
-  const mags = quakes.flatMap((q) => (q.mag === null ? [] : [Math.max(0, q.mag)]));
-  const top = Math.max(8, Math.ceil(max(mags) ?? 0) + 1);
-  const bins = bin<number, number>().domain([0, top]).thresholds(Array.from({ length: top - 1 }, (_, i) => i + 1))(mags);
-  return bins.map((b) => ({ from: b.x0 ?? 0, to: b.x1 ?? 0, count: b.length }));
+  const mags = quakes.flatMap((q) => (q.mag === null ? [] : [q.mag]));
+  const positive = mags.filter((m) => m >= 0);
+  const top = Math.max(8, Math.ceil(max(positive) ?? 0) + 1);
+  const bins = bin<number, number>().domain([0, top]).thresholds(Array.from({ length: top - 1 }, (_, i) => i + 1))(positive);
+  const buckets = bins.map((b) => ({ from: b.x0 ?? 0, to: b.x1 ?? 0, count: b.length }));
+  const negative = mags.length - positive.length;
+  return negative > 0 ? [{ from: -Infinity, to: 0, count: negative }, ...buckets] : buckets;
 }
 
 export interface DayCount {

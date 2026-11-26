@@ -10,7 +10,7 @@ const H = 220;
 const M = { top: 12, right: 8, bottom: 34, left: 40 };
 
 /** A small accessible SVG bar chart. The data is also available as a table elsewhere on the page. */
-export function BarChart({ bars, title, summary }: { bars: Bar[]; title: string; summary: string }) {
+export function BarChart({ bars, title, summary, note }: { bars: Bar[]; title: string; summary: string; note?: string }) {
   const x = scaleBand<string>()
     .domain(bars.map((b) => b.label))
     .range([M.left, W - M.right])
@@ -44,6 +44,7 @@ export function BarChart({ bars, title, summary }: { bars: Bar[]; title: string;
           </g>
         ))}
       </svg>
+      {note && <p className="note">{note}</p>}
     </figure>
   );
 }

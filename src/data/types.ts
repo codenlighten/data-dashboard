@@ -22,6 +22,9 @@ export interface Filters {
   query: string;
 }
 
+/** The magnitude slider's range and step. A shared link may only ask for values it can show. */
+export const MIN_MAG_SLIDER = { min: 0, max: 7, step: 0.5 } as const;
+
 export const DEFAULT_FILTERS: Filters = { window: "week", minMag: 2.5, query: "" };
 
 export interface ParseResult {

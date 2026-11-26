@@ -18,6 +18,8 @@ export default function App() {
   const visible = useMemo(() => (ready ? applyFilters(ready.quakes, filters) : []), [ready, filters]);
   const summary = useMemo(() => summarize(visible), [visible]);
   const histogram = useMemo(() => magnitudeHistogram(visible), [visible]);
+  const rated = histogram.reduce((n, b) => n + b.count, 0);
+  const unrated = visible.length - rated;
   const daily = useMemo(() => dailyCounts(visible), [visible]);
 
   return (
@@ -56,8 +58,13 @@ export default function App() {
             <div className="charts">
               <BarChart
                 title="Events by magnitude"
-                bars={histogram.map((b) => ({ label: `${b.from}`, value: b.count }))}
-                summary={`${visible.length} events in magnitude buckets of one unit.`}
+                bars={histogram.map((b) => ({ label: b.from < 0 ? "<0" : `${b.from}`, value: b.count }))}
+                summary={`${rated} rated event${rated === 1 ? "" : "s"} in magnitude buckets of one unit.`}
+                note={
+                  unrated > 0
+                    ? `${unrated} event${unrated === 1 ? "" : "s"} without a magnitude ${unrated === 1 ? "is" : "are"} not in this chart.`
+                    : undefined
+                }
               />
               <BarChart
                 title="Events per day (UTC)"

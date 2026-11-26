@@ -1,4 +1,4 @@
-import type { Filters, WindowId } from "@/data/types";
+import { MIN_MAG_SLIDER, type Filters, type WindowId } from "@/data/types";
 
 const WINDOWS: { id: WindowId; label: string }[] = [
   { id: "hour", label: "Past hour" },
@@ -28,9 +28,7 @@ export function Controls({ filters, onChange }: { filters: Filters; onChange: (p
         <input
           id="min-mag"
           type="range"
-          min={0}
-          max={7}
-          step={0.5}
+          {...MIN_MAG_SLIDER}
           value={filters.minMag}
           onChange={(e) => onChange({ minMag: Number(e.target.value) })}
         />
