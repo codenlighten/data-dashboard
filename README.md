@@ -4,6 +4,10 @@
 
 **[Open the live demo](https://codenlighten.github.io/data-dashboard/)** (GitHub Pages, published by this repository's CI after the tests pass; it reads the public USGS feed from your browser).
 
+![The dashboard: filters, summary figures and a world map of earthquakes sized by magnitude and coloured by depth](docs/dashboard.png)
+
+*The live demo on 2026-11-26. The data shown is from the USGS feed.*
+
 An interactive dashboard over the public [USGS earthquake feed](https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php): summary tiles, a world map, two charts and a sortable table, with filters that live in the URL. It runs entirely in the browser; there is no server and no API key.
 
 Shows front-end engineering with attention to data handling, accessibility and testing, not just a pretty chart.
