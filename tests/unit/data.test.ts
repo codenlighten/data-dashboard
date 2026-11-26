@@ -22,6 +22,7 @@ describe("parseFeed", () => {
     const good = fixture.features[0];
     const r = parseFeed({
       type: "FeatureCollection",
+      metadata: fixture.metadata,
       features: [
         good,
         null,
@@ -40,6 +41,7 @@ describe("parseFeed", () => {
     const withProps = (id: string, over: Record<string, unknown>) => ({ ...good, id, properties: { ...good.properties, ...over } });
     const r = parseFeed({
       type: "FeatureCollection",
+      metadata: fixture.metadata,
       features: [
         withProps("t-high", { time: 1e20 }),
         withProps("t-low", { time: -1e20 }),
@@ -54,11 +56,39 @@ describe("parseFeed", () => {
     expect(r.skipped).toBe(4);
   });
 
+  it("drops events far outside the period a feed can cover, so one record cannot stretch the daily chart", () => {
+    const good = fixture.features[0];
+    const at = (id: string, days: number) => ({
+      ...good, id, properties: { ...good.properties, time: fixture.metadata.generated + days * 86_400_000 },
+    });
+    const r = parseFeed({ ...fixture, features: [at("year-old", -365), at("next-month", 30), at("month-old", -30), at("now", 0)] });
+    expect(r.quakes.map((e) => e.id)).toEqual(["month-old", "now"]);
+    expect(dailyCounts(r.quakes)).toHaveLength(31);
+  });
+
+  it("judges the period by the clock when the feed does not say when it was made", () => {
+    const good = fixture.features[0];
+    const at = (id: string, time: number) => ({ ...good, id, properties: { ...good.properties, time } });
+    const features = [at("old", Date.now() - 365 * 86_400_000), at("recent", Date.now() - 3_600_000)];
+    expect(parseFeed({ type: "FeatureCollection", features }).quakes.map((e) => e.id)).toEqual(["recent"]);
+  });
+
+  it("drops a magnitude that is present but is not a usable number", () => {
+    const good = fixture.features[0];
+    const withMag = (id: string, mag: unknown) => ({ ...good, id, properties: { ...good.properties, mag } });
+    const r = parseFeed({
+      ...fixture,
+      features: [withMag("text", "1000000000"), withMag("infinite", Infinity), withMag("object", {}), withMag("none", null)],
+    });
+    expect(r.quakes.map((e) => e.id)).toEqual(["none"]);
+    expect(r.skipped).toBe(3);
+  });
+
   it("rejects documents that are not a feed, and non-https links", () => {
     expect(() => parseFeed({ hello: "world" })).toThrow(/FeatureCollection/);
     expect(() => parseFeed(null)).toThrow();
     const f = { ...fixture.features[0], properties: { ...fixture.features[0].properties, url: "javascript:alert(1)" } };
-    expect(parseFeed({ type: "FeatureCollection", features: [f] }).quakes[0].url).toBe("");
+    expect(parseFeed({ type: "FeatureCollection", metadata: fixture.metadata, features: [f] }).quakes[0].url).toBe("");
   });
 });
 
@@ -66,6 +96,11 @@ describe("applyFilters", () => {
   const data = [q({ id: "a", mag: 1 }), q({ id: "b", mag: 2.5, place: "Near Tokyo" }), q({ id: "c", mag: null })];
   it("min magnitude is inclusive and excludes unrated events", () => {
     expect(applyFilters(data, { ...DEFAULT_FILTERS, minMag: 2.5 }).map((e) => e.id)).toEqual(["b"]);
+  });
+  it("minMag 0 means no minimum: negative magnitudes are kept too", () => {
+    const small = [q({ id: "n", mag: -0.5 }), q({ id: "u", mag: null })];
+    expect(applyFilters(small, { ...DEFAULT_FILTERS, minMag: 0 }).map((e) => e.id)).toEqual(["n", "u"]);
+    expect(applyFilters(small, { ...DEFAULT_FILTERS, minMag: 0.5 })).toEqual([]);
   });
   it("minMag 0 keeps unrated events", () => {
     expect(applyFilters(data, { ...DEFAULT_FILTERS, minMag: 0 })).toHaveLength(3);

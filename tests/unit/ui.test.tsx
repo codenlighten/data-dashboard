@@ -123,6 +123,15 @@ describe("App", () => {
     expect(screen.getByRole("img", { name: /^Events by magnitude\. 1 rated event / })).toBeInTheDocument();
   });
 
+  it("shows negative magnitudes in their own bar when there is no minimum", async () => {
+    const good = fixture.features[0];
+    const features = [{ ...good, id: "tiny", properties: { ...good.properties, mag: -0.4 } }];
+    window.history.replaceState(null, "", "/?mag=0");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(ok({ ...fixture, features })));
+    render(<App />);
+    expect(await screen.findByText("<0: 1")).toBeInTheDocument();
+  });
+
   it("ignores a slow stale response when the window changed meanwhile", async () => {
     let releaseWeek!: (r: Response) => void;
     const slowWeek = new Promise<Response>((res) => (releaseWeek = res));

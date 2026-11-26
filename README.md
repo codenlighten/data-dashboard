@@ -35,7 +35,7 @@ Needs Node 22. On a bare Linux machine the browser may also need system librarie
 
 ## Tests
 
-`npm test` runs 29 unit and component tests (Vitest and Testing Library). `npm run test:e2e` runs 5 Playwright tests in a real browser (installed Chrome, one browser only) against a built copy of the app, with the USGS request answered from a recorded sample so the tests are deterministic and offline.
+`npm test` runs 34 unit and component tests (Vitest and Testing Library). `npm run test:e2e` runs 5 Playwright tests in a real browser (installed Chrome, one browser only) against a built copy of the app, with the USGS request answered from a recorded sample so the tests are deterministic and offline.
 
 ### Deliberate breaks
 
@@ -60,13 +60,13 @@ An independent AI review of the source (2026-11-26) found five faults the first 
 
 | Fault | Fix |
 |---|---|
-| A record with a huge but finite timestamp threw while rendering and blanked the page | Dates outside 1900 to 2100 are dropped and counted |
-| A magnitude of a billion made the chart allocate until memory ran out (the new test reproduced that) | Magnitudes outside -5 to 10 are dropped and counted |
+| A record with a huge but finite timestamp threw while rendering and blanked the page; a merely distant one stretched the daily chart over years | Events outside the feed's period (45 days back, 2 ahead of when it was made) are dropped and counted |
+| A magnitude of a billion made the chart allocate until memory ran out (the new test reproduced that) | Magnitudes outside -5 to 10, or present but not a number, are dropped and counted |
 | A shared link could ask for a magnitude the slider cannot show | Only slider values are accepted |
 | The magnitude chart counted events it did not draw, and drew negative magnitudes as 0 | A "<0" bucket, and a note saying how many have no magnitude |
 | The table returned to an old page when filtering was undone | New data starts at page 1 |
 
-Eleven deliberate breaks of the new code were each caught.
+The second row of fixes (the period and non-numeric magnitudes) came from a second review of the first ones.
 
 ## Limits
 
