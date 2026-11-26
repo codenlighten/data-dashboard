@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import fixture from "../fixtures/week.json";
+import fixture from "../../third_party/usgs/week.json";
 import { parseFeed } from "@/data/parse";
 import { applyFilters } from "@/data/filter";
 import { dailyCounts, magnitudeHistogram, summarize } from "@/data/stats";

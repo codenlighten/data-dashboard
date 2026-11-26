@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import fixture from "../fixtures/week.json";
+import fixture from "../../third_party/usgs/week.json";
 import App from "@/App";
 import { QuakeTable } from "@/components/QuakeTable";
 import type { Quake } from "@/data/types";

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import fixture from "../fixtures/week.json" with { type: "json" };
+import fixture from "../../third_party/usgs/week.json" with { type: "json" };
 
 // The real USGS feed is never called: the browser's request is answered with a recorded sample.
 async function mockFeed(page: Page, body: unknown = fixture, status = 200) {
