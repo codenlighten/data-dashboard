@@ -1,5 +1,7 @@
 # Earthquake dashboard (React, TypeScript, D3)
 
+[![CI](https://github.com/codenlighten/data-dashboard/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/codenlighten/data-dashboard/actions/workflows/ci.yml)
+
 **[Open the live demo](https://codenlighten.github.io/data-dashboard/)** (GitHub Pages, published by this repository's CI after the tests pass; it reads the public USGS feed from your browser).
 
 An interactive dashboard over the public [USGS earthquake feed](https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php): summary tiles, a world map, two charts and a sortable table, with filters that live in the URL. It runs entirely in the browser; there is no server and no API key.
