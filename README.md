@@ -14,10 +14,11 @@ Shows front-end engineering with attention to data handling, accessibility and t
 npm install
 npm run dev        # http://localhost:5173
 npm test           # unit and component tests
+npx playwright install chromium   # once: downloads the browser the next command drives
 npm run test:e2e   # Playwright, drives a real browser (the USGS feed is mocked)
 ```
 
-Needs Node 22.
+Needs Node 22. On a bare Linux machine the browser may also need system libraries: `npx playwright install --with-deps chromium`.
 
 ## What this proves
 
